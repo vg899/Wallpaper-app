@@ -135,6 +135,9 @@
 
 <body class="bg-brand-surface text-brand-onSurface h-screen flex flex-col overflow-hidden transition-colors duration-300 select-none">
 
+  <!-- Persistent Ambient Blurred Wallpaper Background -->
+  <div id="app-ambient-wallpaper" class="fixed inset-0 pointer-events-none z-[-2] bg-cover bg-center transition-all duration-1000 opacity-15 filter blur-3xl scale-110"></div>
+
   <!-- Pull-to-refresh Indicator -->
   <div id="pull-to-refresh-indicator" class="fixed top-0 left-0 right-0 h-16 flex items-center justify-center z-50 pointer-events-none">
     <div class="bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant shadow-lg rounded-full p-3 flex items-center gap-2 border border-white/5">
@@ -162,6 +165,9 @@
       </div>
       
       <div class="flex items-center gap-2">
+        <button id="phone-preview-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-brand-primary/20 hover:scale-105 active:scale-95 transition-all text-brand-primary border border-brand-primary/30" title="My Virtual Phone Screen">
+          <i class="fa-solid fa-mobile-screen-button text-sm animate-pulse"></i>
+        </button>
         <button id="admin-panel-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant hover:scale-105 active:scale-95 transition-all text-brand-onSurface">
           <i class="fa-solid fa-user-shield text-sm"></i>
         </button>
@@ -695,6 +701,185 @@
   </div>
 
   <!-- ============================================ -->
+  <!-- VIRTUAL PHONE SIMULATOR OVERLAY -->
+  <!-- ============================================ -->
+  <div id="virtual-phone-overlay" class="fixed inset-0 bg-black/95 z-[70] transform translate-y-full transition-transform duration-500 ease-out flex flex-col overflow-hidden hidden">
+    <!-- Top Bar -->
+    <div class="p-5 flex items-center justify-between bg-neutral-900 border-b border-white/5 z-50">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div>
+          <h3 class="font-poppins font-bold text-sm text-white">My Virtual Phone / मेरा वर्चुअल फ़ोन</h3>
+          <p class="text-[9px] text-brand-onSurfaceVariant/60">Android 16 Simulation</p>
+        </div>
+      </div>
+      <button id="virtual-phone-close-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white active:scale-90 transition-all">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Tab selectors: Lock vs Home Screen inside virtual phone overlay -->
+    <div class="flex bg-neutral-900 p-2 gap-2 border-b border-white/5">
+      <button id="vp-tab-lock" class="flex-1 py-2.5 text-xs font-poppins font-bold rounded-xl text-center bg-brand-primary text-black transition-all">
+        <i class="fa-solid fa-lock mr-1.5"></i> Lock Screen
+      </button>
+      <button id="vp-tab-home" class="flex-1 py-2.5 text-xs font-poppins font-bold rounded-xl text-center bg-neutral-800 text-neutral-400 hover:text-white transition-all">
+        <i class="fa-solid fa-house mr-1.5"></i> Home Screen
+      </button>
+    </div>
+
+    <!-- Active Simulated View Screen (Scrollable to fit instruction and simulated device) -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-6 flex flex-col items-center justify-start bg-neutral-950 no-scrollbar">
+      
+      <!-- Realistic Phone Simulator Device Mockup -->
+      <div class="relative w-[280px] h-[520px] rounded-[40px] overflow-hidden shadow-2xl border-[10px] border-neutral-800 bg-neutral-900 flex-shrink-0 transition-transform duration-500" id="vp-device-frame">
+        <!-- Background Wallpaper dynamic overlay -->
+        <div class="absolute inset-0 bg-cover bg-center transition-all duration-500" id="vp-device-bg"></div>
+        <div class="absolute inset-0 bg-black/15"></div>
+
+        <!-- Android Status Bar -->
+        <div class="absolute top-0 left-0 right-0 h-7 flex items-center justify-between px-5 text-[10px] text-white font-medium z-40 select-none">
+          <span>10:30</span>
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-wifi"></i>
+            <i class="fa-solid fa-signal"></i>
+            <i class="fa-solid fa-battery-full text-brand-primary"></i>
+          </div>
+        </div>
+
+        <!-- SIMULATED LOCK SCREEN VIEW -->
+        <div id="vp-screen-lock" class="absolute inset-0 flex flex-col justify-between p-5 pt-8 text-white transition-all duration-300">
+          <div class="text-center mt-6 space-y-1">
+            <p class="text-[10px] font-medium opacity-90 uppercase tracking-wider font-poppins" id="vp-lock-date">Saturday, Jul 11</p>
+            <h1 class="text-5xl font-poppins font-black tracking-tight" id="vp-lock-time">10:30</h1>
+            <div class="flex justify-center items-center gap-1.5 opacity-80 bg-black/20 backdrop-blur-sm rounded-full py-0.5 px-2.5 mx-auto w-max text-[10px]">
+              <i class="fa-solid fa-cloud-sun text-yellow-400"></i>
+              <span>28°C Sunny</span>
+            </div>
+          </div>
+
+          <!-- Notification Capsule -->
+          <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-3 space-y-1.5 mx-1 shadow-lg transform translate-y-2 animate-pulse-fast">
+            <div class="flex items-center justify-between text-[8px] text-brand-primary font-bold">
+              <span class="flex items-center gap-1"><i class="fa-solid fa-wand-magic-sparkles"></i> DROIDWALLS</span>
+              <span class="opacity-60">Just now</span>
+            </div>
+            <p class="text-[10px] font-bold text-white line-clamp-1">New Wallpaper Applied!</p>
+            <p class="text-[9px] text-white/70 line-clamp-1">Your screen looks beautiful with this design.</p>
+          </div>
+
+          <!-- Swipe / Tap to Unlock handle -->
+          <div class="text-center space-y-2 pb-2">
+            <button id="vp-unlock-btn" class="mx-auto bg-brand-primary text-black rounded-full px-5 py-2 text-[10px] font-poppins font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-brand-primary/20">
+              <i class="fa-solid fa-lock-open text-[9px]"></i> Swipe Up to Unlock
+            </button>
+            <p class="text-[9px] text-white/50">Simulated Screen Active</p>
+          </div>
+        </div>
+
+        <!-- SIMULATED HOME SCREEN VIEW -->
+        <div id="vp-screen-home" class="absolute inset-0 flex flex-col justify-between p-5 pt-8 text-white transition-all duration-300 hidden translate-y-full">
+          <!-- Widget & Search -->
+          <div class="space-y-3 mt-6">
+            <!-- Google Material You Search Widget -->
+            <div class="bg-black/45 backdrop-blur-md border border-white/5 rounded-2xl p-3 flex items-center justify-between text-white/90">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-brands fa-google text-xs text-brand-primary"></i>
+                <span class="text-[9px] font-medium opacity-80">Search everything...</span>
+              </div>
+              <i class="fa-solid fa-microphone text-xs text-brand-primary"></i>
+            </div>
+
+            <!-- Dynamic Weather Widget -->
+            <div class="bg-brand-primary/10 backdrop-blur-md border border-brand-primary/10 rounded-2xl p-3 flex items-center justify-between">
+              <div class="space-y-0.5">
+                <p class="text-[9px] text-brand-primary font-bold font-poppins">CLOCK & WEATHER</p>
+                <p class="text-xs font-bold text-white">10:30 AM • Delhi</p>
+              </div>
+              <i class="fa-solid fa-sun text-yellow-400 text-lg"></i>
+            </div>
+          </div>
+
+          <!-- Apps Grid -->
+          <div class="space-y-4 mb-2">
+            <div class="grid grid-cols-4 gap-3">
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/80 flex items-center justify-center text-white text-sm shadow-md shadow-emerald-500/20"><i class="fa-solid fa-phone"></i></div>
+                <span class="text-[9px] font-medium text-white shadow-sm drop-shadow-md">Phone</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-10 h-10 rounded-2xl bg-blue-500/80 flex items-center justify-center text-white text-sm shadow-md shadow-blue-500/20"><i class="fa-solid fa-message"></i></div>
+                <span class="text-[9px] font-medium text-white shadow-sm drop-shadow-md">Messages</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-10 h-10 rounded-2xl bg-orange-500/80 flex items-center justify-center text-white text-sm shadow-md shadow-orange-500/20"><i class="fa-solid fa-camera"></i></div>
+                <span class="text-[9px] font-medium text-white shadow-sm drop-shadow-md">Camera</span>
+              </div>
+              <div class="flex flex-col items-center gap-1" id="vp-close-and-return">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center text-white text-sm shadow-md shadow-indigo-500/20 border border-white/15 animate-bounce"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                <span class="text-[9px] font-medium text-white shadow-sm drop-shadow-md">DroidWalls</span>
+              </div>
+            </div>
+
+            <!-- Home Lock Device indicator -->
+            <div class="text-center">
+              <button id="vp-lock-btn" class="mx-auto bg-black/40 hover:bg-black/60 text-white border border-white/15 rounded-full px-4 py-1.5 text-[9px] font-poppins font-bold flex items-center gap-1.5 active:scale-95 transition-all">
+                <i class="fa-solid fa-lock text-[8px]"></i> Lock Simulated Device
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hindi / English Bilingual Physical Device Guides -->
+      <div class="w-full max-w-sm bg-neutral-900 rounded-3xl p-5 border border-white/5 space-y-4 text-brand-onSurface font-sans">
+        <h4 class="font-poppins font-bold text-xs text-brand-primary uppercase tracking-wide flex items-center gap-2">
+          <i class="fa-solid fa-circle-question"></i> How to apply on your Real Phone?
+        </h4>
+        
+        <div class="space-y-3.5 text-xs">
+          <!-- Hindi instruction -->
+          <div class="space-y-1 border-l-2 border-brand-primary pl-3">
+            <p class="font-bold text-white text-[13px]">अपने असली फ़ोन पर कैसे लगाएं?</p>
+            <p class="text-brand-onSurfaceVariant/80 text-[11px] leading-relaxed font-sans">
+              वेबसाइट सुरक्षा नियमों के कारण, हम सीधे आपके असली फ़ोन का वॉलपेपर नहीं बदल सकते हैं। कृपया नीचे दिए गए चरणों का पालन करें:
+            </p>
+            <ol class="list-decimal pl-4 text-brand-onSurfaceVariant/90 text-[11px] space-y-1 mt-1 font-sans">
+              <li>पहले वॉलपेपर के नीचे दिए गए <strong>"Download HD"</strong> बटन को दबाकर इमेज डाउनलोड करें।</li>
+              <li>अपने फ़ोन की <strong>गैलरी (Gallery)</strong> या फोटोज़ ऐप खोलें।</li>
+              <li>डाउनलोड की गई इमेज को चुनें, विकल्प (More/Settings) दबाएं और <strong>"Set as Wallpaper"</strong> पर क्लिक करें।</li>
+            </ol>
+          </div>
+
+          <hr class="border-white/5">
+
+          <!-- English instruction -->
+          <div class="space-y-1 border-l-2 border-neutral-600 pl-3">
+            <p class="font-bold text-white text-[13px]">English Instructions</p>
+            <p class="text-brand-onSurfaceVariant/80 text-[11px] leading-relaxed font-sans">
+              Browser security sandboxes prevent websites from directly changing your device's wallpaper. To set it on your physical phone:
+            </p>
+            <ol class="list-decimal pl-4 text-brand-onSurfaceVariant/90 text-[11px] space-y-1 mt-1 font-sans">
+              <li>Click the <strong>"Download HD"</strong> button below the wallpaper to save it to your device.</li>
+              <li>Open your phone's <strong>Gallery / Photos</strong> application.</li>
+              <li>Select the downloaded image, open the menu (three dots), and select <strong>"Set as Wallpaper"</strong>.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Simulated Screen Actions -->
+        <div class="pt-2 flex gap-3">
+          <button id="vp-download-direct-btn" class="flex-1 py-3 rounded-full bg-brand-surfaceVariant text-brand-primary font-poppins font-bold text-xs border border-white/5 flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-all">
+            <i class="fa-solid fa-circle-down"></i> Download Original HD
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
   <!-- SNACKBAR CONTAINER (NATIVE TOAST NOTIFICATIONS) -->
   <!-- ============================================ -->
   <div id="snackbar-container" class="fixed bottom-22 left-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none">
@@ -763,6 +948,36 @@
       document.getElementById('theme-toggle-btn').addEventListener('click', toggleThemeBtn);
       document.getElementById('admin-panel-btn').addEventListener('click', () => window.location.href = '/admin.html');
       document.getElementById('clear-recent-btn').addEventListener('click', clearRecentHistory);
+
+      // Hook virtual phone preview listeners
+      document.getElementById('phone-preview-btn').addEventListener('click', openVirtualPhonePreview);
+      document.getElementById('virtual-phone-close-btn').addEventListener('click', closeVirtualPhonePreview);
+      
+      document.getElementById('vp-tab-lock').addEventListener('click', () => {
+        document.getElementById('vp-tab-lock').className = "flex-1 py-2.5 text-xs font-poppins font-bold rounded-xl text-center bg-brand-primary text-black transition-all";
+        document.getElementById('vp-tab-home').className = "flex-1 py-2.5 text-xs font-poppins font-bold rounded-xl text-center bg-neutral-800 text-neutral-400 hover:text-white transition-all";
+        document.getElementById('vp-screen-lock').classList.remove('hidden');
+        document.getElementById('vp-screen-home').classList.add('hidden');
+        refreshSimulatedPhoneUI();
+      });
+
+      document.getElementById('vp-tab-home').addEventListener('click', () => {
+        document.getElementById('vp-tab-home').className = "flex-1 py-2.5 text-xs font-poppins font-bold rounded-xl text-center bg-brand-primary text-black transition-all";
+        document.getElementById('vp-tab-lock').className = "flex-1 py-2.5 text-xs font-poppins font-bold rounded-xl text-center bg-neutral-800 text-neutral-400 hover:text-white transition-all";
+        document.getElementById('vp-screen-home').classList.remove('hidden');
+        document.getElementById('vp-screen-lock').classList.add('hidden');
+        refreshSimulatedPhoneUI();
+      });
+
+      document.getElementById('vp-unlock-btn').addEventListener('click', () => {
+        document.getElementById('vp-tab-home').click();
+      });
+
+      document.getElementById('vp-lock-btn').addEventListener('click', () => {
+        document.getElementById('vp-tab-lock').click();
+      });
+
+      document.getElementById('vp-close-and-return').addEventListener('click', closeVirtualPhonePreview);
     });
 
     // ============================================
@@ -791,6 +1006,7 @@
         }
       }
       updateThemeIcons();
+      updateAppBackground();
     }
 
     function updateThemeIcons() {
@@ -1738,14 +1954,162 @@
     }
 
     window.applyWallpaperOption = function(option) {
+      if (!simulatedItem) {
+        showSnackbar("No wallpaper selected!", "error");
+        return;
+      }
+
       const dialog = document.getElementById('set-dialog');
       dialog.classList.add('opacity-0');
       dialog.querySelector('.transform').classList.add('scale-90');
       
+      // Save chosen wallpaper values to localStorage
+      const url = simulatedItem.wallpaperUrl;
+      const id = simulatedItem.id;
+      const title = simulatedItem.title;
+
+      if (option === 'lock') {
+        localStorage.setItem('applied_lock_bg', url);
+        localStorage.setItem('applied_lock_id', id);
+        localStorage.setItem('applied_lock_title', title);
+        showSnackbar("Applied to Lock Screen! लॉक स्क्रीन पर लगा दिया गया है।", "success");
+      } else if (option === 'home') {
+        localStorage.setItem('applied_home_bg', url);
+        localStorage.setItem('applied_home_id', id);
+        localStorage.setItem('applied_home_title', title);
+        showSnackbar("Applied to Home Screen! होम स्क्रीन पर लगा दिया गया है।", "success");
+      } else {
+        localStorage.setItem('applied_lock_bg', url);
+        localStorage.setItem('applied_lock_id', id);
+        localStorage.setItem('applied_lock_title', title);
+        localStorage.setItem('applied_home_bg', url);
+        localStorage.setItem('applied_home_id', id);
+        localStorage.setItem('applied_home_title', title);
+        showSnackbar("Applied to Lock & Home Screens! दोनों स्क्रीन पर लग गया है।", "success");
+      }
+
+      // Track download / set count transaction
+      db.ref(`wallpapers/${id}/downloads`).transaction(downloads => (downloads || 0) + 1);
+
       setTimeout(() => {
         dialog.classList.add('hidden');
-        showSnackbar(`Wallpaper applied to screen ${option.toUpperCase()}!`, "success");
+        updateAppBackground();
+        // Dynamic informative pop
+        setTimeout(() => {
+          showSnackbar("Tap the Phone icon 📱 on top to test on your Virtual Phone!", "info");
+        }, 1500);
       }, 300);
+    }
+
+    // Update Overall App Background dynamically with a premium ambient glassmorphism style
+    function updateAppBackground() {
+      const ambient = document.getElementById('app-ambient-wallpaper');
+      if (!ambient) return;
+      
+      const homeBg = localStorage.getItem('applied_home_bg');
+      const lockBg = localStorage.getItem('applied_lock_bg');
+      const activeBg = homeBg || lockBg;
+
+      if (activeBg) {
+        ambient.style.backgroundImage = `url('${getOptimizedUrl(activeBg, 600)}')`;
+      } else {
+        ambient.style.backgroundImage = 'none';
+      }
+    }
+
+    // Virtual Phone Simulation View Controls
+    function openVirtualPhonePreview() {
+      const overlay = document.getElementById('virtual-phone-overlay');
+      overlay.classList.remove('hidden');
+      
+      // Trigger live ticker update
+      updateVirtualPhoneClock();
+      
+      setTimeout(() => {
+        overlay.classList.remove('translate-y-full');
+      }, 50);
+
+      // Default active simulated screen: Lock Screen
+      document.getElementById('vp-tab-lock').click();
+    }
+
+    function closeVirtualPhonePreview() {
+      const overlay = document.getElementById('virtual-phone-overlay');
+      overlay.classList.add('translate-y-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 500);
+    }
+
+    function refreshSimulatedPhoneUI() {
+      const isLockTab = !document.getElementById('vp-screen-lock').classList.contains('hidden');
+      const bgImg = document.getElementById('vp-device-bg');
+      
+      let bgUrl = "";
+      let wpId = "";
+      if (isLockTab) {
+        bgUrl = localStorage.getItem('applied_lock_bg');
+        wpId = localStorage.getItem('applied_lock_id');
+      } else {
+        bgUrl = localStorage.getItem('applied_home_bg');
+        wpId = localStorage.getItem('applied_home_id');
+      }
+
+      if (bgUrl) {
+        bgImg.style.backgroundImage = `url('${getOptimizedUrl(bgUrl, 500)}')`;
+        
+        // Dynamic binding for direct HD downloading
+        const downBtn = document.getElementById('vp-download-direct-btn');
+        downBtn.onclick = () => {
+          if (wpId) {
+            const found = wallpapers.find(w => w.id === wpId);
+            if (found) {
+              downloadWallpaper(found);
+            } else {
+              // Direct browser fallback download trigger
+              const a = document.createElement('a');
+              a.href = bgUrl;
+              a.target = "_blank";
+              a.download = "droid_wallpaper.jpg";
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+            }
+          } else {
+            window.open(bgUrl, '_blank');
+          }
+        };
+      } else {
+        // Fallback placeholder aesthetic gradient pattern
+        bgImg.style.backgroundImage = "url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop')";
+        const downBtn = document.getElementById('vp-download-direct-btn');
+        downBtn.onclick = () => {
+          showSnackbar("No applied wallpaper to download in this simulated screen", "info");
+        };
+      }
+    }
+
+    // Real-time Clock Simulator inside Simulated Phone UI
+    let vpClockInterval = null;
+    function updateVirtualPhoneClock() {
+      const clockTime = document.getElementById('vp-lock-time');
+      const clockDate = document.getElementById('vp-lock-date');
+      
+      const update = () => {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        if (clockTime) clockTime.innerText = `${hours}:${minutes}`;
+
+        const options = { weekday: 'long', month: 'short', day: 'numeric' };
+        if (clockDate) clockDate.innerText = now.toLocaleDateString('en-US', options);
+      };
+      
+      update();
+      if (vpClockInterval) clearInterval(vpClockInterval);
+      vpClockInterval = setInterval(update, 10000);
     }
 
     document.getElementById('cancel-set-btn').addEventListener('click', () => {
