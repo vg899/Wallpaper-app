@@ -1,0 +1,6 @@
+{
+  "name": "Wallpaper App",
+  "description": "A premium, native Android 16 Material 3 Expressive styled wallpaper application featuring direct Cloudinary uploads, Firebase Realtime Database metadata syncing, advanced search, and offline viewing capabilities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

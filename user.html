@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DroidWalls - Material 3 Wallpaper App</title>
+  
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts: Poppins + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            poppins: ['Poppins', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              primary: '#A8C7FA',
+              primaryDark: '#0B57D0',
+              surface: '#0B0D11',
+              surfaceVariant: '#1E2025',
+              surfaceVariantLight: '#E1E2EC',
+              onSurface: '#E2E2E9',
+              onSurfaceVariant: '#C4C6D0',
+              accent: '#D3E4F4',
+              amoled: '#000000',
+              lightSurface: '#F8F9FC',
+              lightSurfaceVariant: '#EEF0F6',
+              lightOnSurface: '#1F1F1F',
+            }
+          },
+          borderRadius: {
+            '2xl': '18px',
+            '3xl': '24px',
+            '4xl': '28px',
+            '5xl': '32px',
+          },
+          animation: {
+            'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- CSS Customizations for Native Feel & Glassmorphism -->
+  <style>
+    /* Prevent web behaviors to feel like a native app */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      overscroll-behavior-y: contain; /* Pull to refresh is handled manually */
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Scrollbars customization */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* Material Ripple effect animation container */
+    .ripple-container {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .ripple-effect {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    }
+    
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    
+    /* Elegant shimmers */
+    .shimmer {
+      background: linear-gradient(90deg, #1e2025 25%, #2a2c32 50%, #1e2025 75%);
+      background-size: 200% 100%;
+      animation: shimmer-anim 1.5s infinite;
+    }
+    
+    .light .shimmer {
+      background: linear-gradient(90deg, #edf0f5 25%, #f6f8fb 50%, #edf0f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer-anim 1.5s infinite;
+    }
+
+    @keyframes shimmer-anim {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Pull to Refresh Indicator styling */
+    #pull-to-refresh-indicator {
+      transform: translateY(-100%);
+      transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    /* Active navigation highlight block */
+    .nav-indicator {
+      transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+    }
+  </style>
+
+  <!-- Firebase Legacy Compat SDKs (Fast, fully configured, compatible) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+
+<body class="bg-brand-surface text-brand-onSurface h-screen flex flex-col overflow-hidden transition-colors duration-300 select-none">
+
+  <!-- Pull-to-refresh Indicator -->
+  <div id="pull-to-refresh-indicator" class="fixed top-0 left-0 right-0 h-16 flex items-center justify-center z-50 pointer-events-none">
+    <div class="bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant shadow-lg rounded-full p-3 flex items-center gap-2 border border-white/5">
+      <svg id="ptr-spinner" class="animate-spin h-5 w-5 text-brand-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-xs font-medium text-brand-onSurface">Refreshing...</span>
+    </div>
+  </div>
+
+  <!-- Main Scrollable Application Content Area -->
+  <main class="flex-1 overflow-y-auto no-scrollbar relative" id="app-scroll-container">
+    
+    <!-- HEADER -->
+    <header class="p-5 flex items-center justify-between sticky top-0 bg-brand-surface/90 light:bg-brand-lightSurface/95 backdrop-blur-md z-40 transition-colors duration-300">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+          <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-poppins font-bold tracking-tight text-brand-onSurface">DroidWalls</h1>
+          <p class="text-[10px] font-mono text-brand-onSurfaceVariant/70">Android 16 M3 Expressive</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button id="admin-panel-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant hover:scale-105 active:scale-95 transition-all text-brand-onSurface">
+          <i class="fa-solid fa-user-shield text-sm"></i>
+        </button>
+        <button id="theme-toggle-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant hover:scale-105 active:scale-95 transition-all text-brand-onSurface">
+          <i class="fa-solid fa-moon text-sm" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- 1. HOME TAB VIEW -->
+    <section id="tab-home" class="tab-view p-5 pb-24 space-y-7 block">
+      <!-- Welcome Banner Slider -->
+      <div class="relative w-full h-44 rounded-3xl overflow-hidden shadow-xl" id="home-featured-banner">
+        <div class="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-75 scale-105" id="banner-bg"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 p-5 space-y-1">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary text-black font-poppins uppercase tracking-wider">Featured Release</span>
+          <h2 class="text-lg font-poppins font-bold text-white line-clamp-1" id="banner-title">Loading Featured Wallpapers...</h2>
+          <p class="text-xs text-brand-onSurfaceVariant/90 line-clamp-1 font-sans" id="banner-category">Refreshing collections</p>
+        </div>
+        <div class="absolute top-4 right-4 flex gap-1.5" id="banner-dots"></div>
+      </div>
+
+      <!-- Quick Categories Horizontal List -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-poppins font-bold text-base tracking-tight text-brand-onSurface">Browse Collections</h3>
+          <button onclick="switchTab('explore')" class="text-xs font-semibold text-brand-primary font-poppins flex items-center gap-1">
+            All <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
+        </div>
+        <div class="flex gap-2.5 overflow-x-auto no-scrollbar py-1" id="home-categories-chips">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Trending/Featured Wallpapers Horizontal Carousel -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-poppins font-bold text-base tracking-tight text-brand-onSurface">Trending Now</h3>
+          <span class="text-xs text-brand-onSurfaceVariant/60 flex items-center gap-1">
+            <i class="fa-solid fa-fire text-orange-500 animate-pulse"></i> High Demand
+          </span>
+        </div>
+        <div class="flex gap-4 overflow-x-auto no-scrollbar py-1" id="home-trending-carousel">
+          <!-- Dynamic Shimmers -->
+          <div class="flex gap-4">
+            <div class="w-32 h-56 rounded-2xl shimmer flex-shrink-0"></div>
+            <div class="w-32 h-56 rounded-2xl shimmer flex-shrink-0"></div>
+            <div class="w-32 h-56 rounded-2xl shimmer flex-shrink-0"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Latest Wallpapers Grid (Dual Column) -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-poppins font-bold text-base tracking-tight text-brand-onSurface">Fresh Uploads</h3>
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+            <span class="text-xs text-brand-onSurfaceVariant/60">Live Updates</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4" id="home-latest-grid">
+          <!-- Shimmer loadings -->
+          <div class="aspect-[9/16] rounded-3xl shimmer"></div>
+          <div class="aspect-[9/16] rounded-3xl shimmer"></div>
+          <div class="aspect-[9/16] rounded-3xl shimmer"></div>
+          <div class="aspect-[9/16] rounded-3xl shimmer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. EXPLORE TAB VIEW -->
+    <section id="tab-explore" class="tab-view p-5 pb-24 space-y-6 hidden">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-poppins font-bold text-brand-onSurface">Explore Hub</h2>
+        <p class="text-xs text-brand-onSurfaceVariant/70">Beautifully segmented custom categories</p>
+      </div>
+
+      <!-- Categories Big Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="explore-categories-grid">
+        <!-- Built Dynamically with rich backgrounds & count overlays -->
+      </div>
+    </section>
+
+    <!-- 3. SEARCH TAB VIEW -->
+    <section id="tab-search" class="tab-view p-5 pb-24 space-y-5 hidden">
+      <!-- Search Input Container -->
+      <div class="relative w-full z-10">
+        <div class="flex items-center bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant rounded-3xl p-3.5 border border-white/5 shadow-inner">
+          <i class="fa-solid fa-magnifying-glass text-brand-onSurfaceVariant/50 mr-3 text-sm"></i>
+          <input type="text" id="search-input" placeholder="Search title, tags, or categories..." class="bg-transparent border-none outline-none w-full text-sm font-sans placeholder:text-brand-onSurfaceVariant/40 text-brand-onSurface">
+          <button id="search-clear-btn" class="hidden text-brand-onSurfaceVariant/50 ml-2 hover:scale-110">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+          <button id="filters-toggle-btn" class="ml-3 text-brand-primary p-1 bg-brand-primaryDark/20 rounded-full hover:scale-105 active:scale-95 transition-all">
+            <i class="fa-solid fa-sliders text-sm px-2 py-1"></i>
+          </button>
+        </div>
+
+        <!-- Search Suggestions Dropdown -->
+        <div id="search-suggestions" class="absolute left-0 right-0 top-14 bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant border border-white/5 rounded-2xl shadow-2xl overflow-hidden hidden">
+          <!-- Dynamic suggestions -->
+        </div>
+      </div>
+
+      <!-- Extended Filters Drawer (Collapsible) -->
+      <div id="filters-drawer" class="hidden bg-brand-surfaceVariant/60 light:bg-brand-lightSurfaceVariant/80 backdrop-blur-md rounded-3xl p-5 border border-white/5 space-y-4 transition-all duration-300">
+        <div class="flex items-center justify-between pb-2 border-b border-white/5">
+          <span class="text-xs font-poppins font-bold text-brand-primary uppercase tracking-wide">Refine Wallpapers</span>
+          <button id="filters-reset-btn" class="text-[11px] font-medium text-red-400 hover:underline">Reset Filters</button>
+        </div>
+
+        <!-- Category Dropdown filter -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-brand-onSurfaceVariant/80">Category</label>
+          <select id="filter-category" class="w-full bg-brand-surface/60 light:bg-brand-lightSurface border border-white/10 rounded-xl p-2.5 text-xs text-brand-onSurface outline-none">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+
+        <!-- Color Accent Facet -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-brand-onSurfaceVariant/80">Dominant Color</label>
+          <div class="flex flex-wrap gap-2" id="filter-colors-grid">
+            <!-- Custom palette -->
+          </div>
+        </div>
+
+        <!-- Aspect Ratio Facet -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-brand-onSurfaceVariant/80">Screen Layout</label>
+          <div class="flex gap-2">
+            <button class="filter-chip-btn flex-1 py-2 rounded-xl text-center text-xs bg-brand-surface/40 hover:bg-brand-primary/20 text-brand-onSurface border border-white/5 transition-all" data-filter="aspect" data-val="9:16">9:16 Portrait</button>
+            <button class="filter-chip-btn flex-1 py-2 rounded-xl text-center text-xs bg-brand-surface/40 hover:bg-brand-primary/20 text-brand-onSurface border border-white/5 transition-all" data-filter="aspect" data-val="9:20">9:20 Tall</button>
+            <button class="filter-chip-btn flex-1 py-2 rounded-xl text-center text-xs bg-brand-surface/40 hover:bg-brand-primary/20 text-brand-onSurface border border-white/5 transition-all" data-filter="aspect" data-val="16:9">16:9 Wide</button>
+          </div>
+        </div>
+
+        <!-- Sorting Order Facet -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-brand-onSurfaceVariant/80">Sort By</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="filter-chip-btn active-filter py-2 rounded-xl text-xs text-center border transition-all" data-filter="sort" data-val="newest">Newest first</button>
+            <button class="filter-chip-btn py-2 rounded-xl text-xs text-center border transition-all" data-filter="sort" data-val="popular">Downloads</button>
+            <button class="filter-chip-btn py-2 rounded-xl text-xs text-center border transition-all" data-filter="sort" data-val="likes">Most Liked</button>
+            <button class="filter-chip-btn py-2 rounded-xl text-xs text-center border transition-all" data-filter="sort" data-val="views">Most Viewed</button>
+          </div>
+        </div>
+
+        <!-- Special Badges Toggle Facet -->
+        <div class="flex gap-3">
+          <label class="flex items-center gap-2 cursor-pointer flex-1 bg-brand-surface/40 p-2.5 rounded-xl border border-white/5">
+            <input type="checkbox" id="filter-featured" class="accent-brand-primary h-4.5 w-4.5 rounded">
+            <span class="text-xs text-brand-onSurface">Featured</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer flex-1 bg-brand-surface/40 p-2.5 rounded-xl border border-white/5">
+            <input type="checkbox" id="filter-premium" class="accent-brand-primary h-4.5 w-4.5 rounded">
+            <span class="text-xs text-brand-onSurface">Premium</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Active Filter Tags Display -->
+      <div id="active-tags-container" class="flex flex-wrap gap-2 py-1 hidden">
+        <!-- Display selected filters with close handles -->
+      </div>
+
+      <!-- Live Search Grid Results -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-poppins font-semibold text-brand-onSurfaceVariant" id="search-results-counter">Type to Search...</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4" id="search-wallpapers-grid">
+          <!-- Dynamic Wallpapers -->
+        </div>
+        
+        <!-- Empty Results Alert -->
+        <div id="search-empty-state" class="hidden text-center py-16 space-y-4">
+          <div class="w-16 h-16 mx-auto rounded-full bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant flex items-center justify-center">
+            <i class="fa-solid fa-magnifying-glass-minus text-2xl text-brand-onSurfaceVariant/60"></i>
+          </div>
+          <div>
+            <h4 class="font-poppins font-bold text-base text-brand-onSurface">No Wallpapers Found</h4>
+            <p class="text-xs text-brand-onSurfaceVariant/60 max-w-xs mx-auto mt-1">Try refining your filter settings, clearing search queries, or checking the tags.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. FAVORITES TAB VIEW -->
+    <section id="tab-favorites" class="tab-view p-5 pb-24 space-y-6 hidden">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-poppins font-bold text-brand-onSurface">My Studio Favorites</h2>
+        <p class="text-xs text-brand-onSurfaceVariant/70">Wallpapers saved on your local device</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4" id="favorites-grid">
+        <!-- Dynamically drawn liked items -->
+      </div>
+
+      <!-- Favorites Empty State -->
+      <div id="favorites-empty-state" class="hidden text-center py-20 space-y-4">
+        <div class="w-16 h-16 mx-auto rounded-full bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant flex items-center justify-center">
+          <i class="fa-solid fa-heart-broken text-2xl text-pink-500 animate-pulse"></i>
+        </div>
+        <div>
+          <h4 class="font-poppins font-bold text-base text-brand-onSurface">Your library is lonely</h4>
+          <p class="text-xs text-brand-onSurfaceVariant/60 max-w-xs mx-auto mt-1">Explore stunning AMOLED and Ultra HD papers, click the heart button, and collect them here!</p>
+        </div>
+        <button onclick="switchTab('home')" class="px-5 py-2.5 rounded-full bg-brand-primary text-black font-poppins font-semibold text-xs shadow-md shadow-brand-primary/10">Browse Home</button>
+      </div>
+    </section>
+
+    <!-- 5. LIBRARY/SETTINGS TAB VIEW -->
+    <section id="tab-settings" class="tab-view p-5 pb-24 space-y-7 hidden">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-poppins font-bold text-brand-onSurface">User Library</h2>
+        <p class="text-xs text-brand-onSurfaceVariant/70">Recently viewed papers and app settings</p>
+      </div>
+
+      <!-- Recently Viewed section -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-poppins font-bold text-base tracking-tight text-brand-onSurface">Recently Opened</h3>
+          <button id="clear-recent-btn" class="text-[11px] text-red-400 font-semibold hover:underline">Clear History</button>
+        </div>
+        <div class="flex gap-3 overflow-x-auto no-scrollbar py-1" id="recent-history-carousel">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Native AMOLED Theme Toggles M3 Card -->
+      <div class="bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant rounded-3xl p-5 border border-white/5 space-y-4">
+        <h3 class="font-poppins font-bold text-sm text-brand-primary uppercase tracking-wide">Display Tuning</h3>
+        
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-palette text-blue-400"></i>
+              <div>
+                <p class="text-xs font-semibold text-brand-onSurface">Pure AMOLED Mode</p>
+                <p class="text-[10px] text-brand-onSurfaceVariant/60">Turn off pixels on OLED screens for deep blacks</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="amoled-toggle" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            </label>
+          </div>
+
+          <hr class="border-white/5">
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-circle-half-stroke text-purple-400"></i>
+              <div>
+                <p class="text-xs font-semibold text-brand-onSurface">System Light Theme</p>
+                <p class="text-[10px] text-brand-onSurfaceVariant/60">Switch to Android 16 clean light colors</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="light-theme-toggle" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- App Info & Storage Info -->
+      <div class="bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant rounded-3xl p-5 border border-white/5 space-y-4">
+        <h3 class="font-poppins font-bold text-sm text-brand-primary uppercase tracking-wide">Developer Engine</h3>
+        <div class="space-y-3.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-brand-onSurfaceVariant/70">Client Version</span>
+            <span class="font-mono text-brand-onSurface">v16.4.2_stable</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-brand-onSurfaceVariant/70">Engine Framework</span>
+            <span class="text-brand-onSurface">Vanilla JS ES16</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-brand-onSurfaceVariant/70">Cloud Storage Sync</span>
+            <span class="text-green-400 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-cloud-bolt text-[10px] animate-bounce"></i> Cloudinary CDN
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-brand-onSurfaceVariant/70">Database Instance</span>
+            <span class="text-brand-onSurface text-[11px] font-mono">Firebase RTDB</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION RAIL -->
+  <nav class="fixed bottom-0 left-0 right-0 h-18 bg-brand-surfaceVariant/85 light:bg-brand-lightSurfaceVariant/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-40 transition-colors duration-300">
+    <!-- Highlight Capsule Overlay -->
+    <div id="nav-highlight" class="absolute h-9 w-[68px] bg-brand-primary/15 dark:bg-brand-primary/25 rounded-full pointer-events-none nav-indicator"></div>
+
+    <button onclick="switchTab('home')" class="nav-btn flex flex-col items-center justify-center w-16 h-full gap-1 text-brand-primary relative z-10" data-tab="home">
+      <i class="fa-solid fa-house text-lg"></i>
+      <span class="text-[10px] font-poppins font-medium">Home</span>
+    </button>
+    <button onclick="switchTab('explore')" class="nav-btn flex flex-col items-center justify-center w-16 h-full gap-1 text-brand-onSurfaceVariant/70 relative z-10" data-tab="explore">
+      <i class="fa-solid fa-compass text-lg"></i>
+      <span class="text-[10px] font-poppins font-medium">Explore</span>
+    </button>
+    <button onclick="switchTab('search')" class="nav-btn flex flex-col items-center justify-center w-16 h-full gap-1 text-brand-onSurfaceVariant/70 relative z-10" data-tab="search">
+      <i class="fa-solid fa-magnifying-glass text-lg"></i>
+      <span class="text-[10px] font-poppins font-medium">Search</span>
+    </button>
+    <button onclick="switchTab('favorites')" class="nav-btn flex flex-col items-center justify-center w-16 h-full gap-1 text-brand-onSurfaceVariant/70 relative z-10" data-tab="favorites">
+      <i class="fa-solid fa-heart text-lg"></i>
+      <span class="text-[10px] font-poppins font-medium">Favorites</span>
+    </button>
+    <button onclick="switchTab('settings')" class="nav-btn flex flex-col items-center justify-center w-16 h-full gap-1 text-brand-onSurfaceVariant/70 relative z-10" data-tab="settings">
+      <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+      <span class="text-[10px] font-poppins font-medium">Library</span>
+    </button>
+  </nav>
+
+  <!-- ============================================ -->
+  <!-- NATIVE DETAIL SLIDE-OVERLAY (FULL PAGE PORTRAIT) -->
+  <!-- ============================================ -->
+  <div id="detail-overlay" class="fixed inset-0 bg-black z-50 transform translate-y-full transition-transform duration-500 ease-out flex flex-col overflow-hidden hidden">
+    <!-- Top Floating Actions bar -->
+    <div class="absolute top-0 left-0 right-0 p-5 flex items-center justify-between z-50 bg-gradient-to-b from-black/80 to-transparent">
+      <button id="detail-close-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-md text-white border border-white/10 active:scale-90 transition-all">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      
+      <div class="flex items-center gap-2">
+        <button id="detail-like-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-md text-white border border-white/10 active:scale-90 transition-all">
+          <i class="fa-regular fa-heart" id="detail-like-icon"></i>
+        </button>
+        <button id="detail-share-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-md text-white border border-white/10 active:scale-90 transition-all">
+          <i class="fa-solid fa-share-nodes"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Swipe Left Indicator -->
+    <div class="absolute left-4 top-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-40 hover:opacity-100 transition-opacity">
+      <button class="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center text-xs">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+    <!-- Swipe Right Indicator -->
+    <div class="absolute right-4 top-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-40 hover:opacity-100 transition-opacity">
+      <button class="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center text-xs">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Interactive Wallpaper Image Canvas (Pinchable & Swipeable) -->
+    <div id="detail-image-viewport" class="flex-1 w-full bg-neutral-950 flex items-center justify-center overflow-hidden relative cursor-zoom-in">
+      <div id="detail-shimmer" class="absolute inset-0 bg-neutral-900 shimmer flex items-center justify-center">
+        <div class="text-center space-y-2">
+          <svg class="animate-spin h-8 w-8 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-xs text-white/50">Fetching HD Quality...</span>
+        </div>
+      </div>
+      <img id="detail-image" src="" alt="Wallpaper Preview" class="max-h-full max-w-full object-contain select-none pointer-events-none transition-transform duration-100 ease-out">
+    </div>
+
+    <!-- Bottom Actions Bottom Sheet (Material styled) -->
+    <div id="detail-bottom-sheet" class="bg-brand-surface light:bg-brand-lightSurface border-t border-white/5 rounded-t-5xl p-6 space-y-5 relative z-40 max-h-[50%] overflow-y-auto no-scrollbar transition-all duration-300">
+      
+      <!-- Drag pill indicator -->
+      <div class="w-10 h-1 bg-brand-onSurfaceVariant/30 rounded-full mx-auto -mt-2 mb-4"></div>
+
+      <!-- Wallpaper Header Info -->
+      <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1.5 flex-1">
+          <div class="flex items-center gap-2">
+            <span id="detail-category-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-primaryDark/30 text-brand-primary border border-brand-primary/10 font-poppins">Minimal</span>
+            <span id="detail-premium-badge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/25 font-poppins"><i class="fa-solid fa-crown mr-0.5 text-[8px]"></i> Premium</span>
+            <span id="detail-trending-badge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/20 text-orange-400 border border-orange-500/25 font-poppins"><i class="fa-solid fa-fire mr-0.5 text-[8px]"></i> Hot</span>
+          </div>
+          <h3 id="detail-title" class="text-lg font-poppins font-bold text-brand-onSurface line-clamp-1">Nebula Waves</h3>
+          <p id="detail-desc" class="text-xs text-brand-onSurfaceVariant/70 leading-relaxed font-sans line-clamp-2">A high contrast custom AMOLED wallpaper featuring stars.</p>
+        </div>
+      </div>
+
+      <!-- Live Counters Card -->
+      <div class="grid grid-cols-3 gap-3.5 bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant rounded-2xl p-3 border border-white/5">
+        <div class="text-center">
+          <p class="text-[10px] text-brand-onSurfaceVariant/50 font-poppins">Total Views</p>
+          <p id="counter-views" class="text-sm font-mono font-bold text-brand-onSurface mt-0.5">0</p>
+        </div>
+        <div class="border-x border-white/5 text-center">
+          <p class="text-[10px] text-brand-onSurfaceVariant/50 font-poppins">Likes</p>
+          <p id="counter-likes" class="text-sm font-mono font-bold text-brand-onSurface mt-0.5">0</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[10px] text-brand-onSurfaceVariant/50 font-poppins">Downloads</p>
+          <p id="counter-downloads" class="text-sm font-mono font-bold text-brand-onSurface mt-0.5">0</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-3">
+        <!-- Live Set Wallpaper Simulation overlay button -->
+        <button id="set-wallpaper-btn" class="flex-1 bg-brand-primary text-black rounded-full h-12 flex items-center justify-center gap-2 font-poppins font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-lg shadow-brand-primary/10">
+          <i class="fa-solid fa-crop-simple text-sm"></i> Set Wallpaper
+        </button>
+        <!-- Actual Direct Download Trigger -->
+        <button id="download-btn" class="flex-1 bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant hover:bg-neutral-800 text-brand-onSurface rounded-full h-12 flex items-center justify-center gap-2 font-poppins font-bold text-xs border border-white/5 hover:scale-105 active:scale-95 transition-all">
+          <i class="fa-solid fa-circle-down text-sm text-brand-primary"></i> Download HD
+        </button>
+      </div>
+
+      <!-- Tech details collapsable drawer -->
+      <div class="space-y-2 border-t border-white/5 pt-4">
+        <span class="text-[11px] font-poppins font-bold text-brand-primary uppercase tracking-wide">Image Telemetry</span>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+          <div class="flex justify-between border-b border-white/5 pb-1">
+            <span class="text-brand-onSurfaceVariant/60">Max Resolution</span>
+            <span id="tel-resolution" class="font-mono text-brand-onSurface">1080 x 2400</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-1">
+            <span class="text-brand-onSurfaceVariant/60">Aspect Ratio</span>
+            <span id="tel-ratio" class="font-mono text-brand-onSurface">9 : 20</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-1">
+            <span class="text-brand-onSurfaceVariant/60">Format</span>
+            <span id="tel-format" class="font-mono text-brand-onSurface">AVIF/WebP</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-1">
+            <span class="text-brand-onSurfaceVariant/60">CDN Delivery</span>
+            <span class="text-green-400 font-semibold">Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Wallpapers Carousel -->
+      <div class="space-y-2.5 pt-2">
+        <span class="text-[11px] font-poppins font-bold text-brand-primary uppercase tracking-wide">More from this collection</span>
+        <div class="flex gap-3 overflow-x-auto no-scrollbar py-1" id="detail-related-carousel">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- DIALOG: SET WALLPAPER NATIVE PREVIEW DIALOG -->
+  <!-- ============================================ -->
+  <div id="set-dialog" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-5 hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant border border-white/10 rounded-4xl max-w-sm w-full p-6 space-y-6 transform scale-90 transition-transform duration-300">
+      <div class="text-center space-y-1">
+        <h4 class="font-poppins font-bold text-lg text-brand-onSurface">Apply Wallpaper</h4>
+        <p class="text-xs text-brand-onSurfaceVariant/70">Simulating setup for Android 16 Home/Lock Screens</p>
+      </div>
+
+      <!-- Phone UI Frame Mockup Preview overlay -->
+      <div class="relative aspect-[9/16] w-40 mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-neutral-800 bg-neutral-900" id="phone-ui-frame">
+        <div class="absolute inset-0 bg-cover bg-center transition-all duration-300" id="phone-preview-bg"></div>
+        <div class="absolute inset-0 bg-black/15"></div>
+        
+        <!-- Simulate Lockscreen Widget UI -->
+        <div id="phone-frame-lock" class="absolute inset-0 flex flex-col justify-between p-3.5 text-white">
+          <div class="text-center mt-4">
+            <p class="text-[9px] font-medium opacity-85 uppercase tracking-wide">Saturday, Jul 11</p>
+            <h1 class="text-3xl font-poppins font-black leading-tight">10:30</h1>
+            <div class="flex justify-center items-center gap-1.5 mt-1 opacity-75">
+              <i class="fa-solid fa-cloud-sun text-[10px]"></i>
+              <span class="text-[9px]">28°C Sunny</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center opacity-70">
+            <i class="fa-solid fa-circle-play text-xs"></i>
+            <i class="fa-solid fa-lock text-[10px]"></i>
+            <i class="fa-solid fa-camera text-xs"></i>
+          </div>
+        </div>
+
+        <!-- Simulate Homescreen Widget UI -->
+        <div id="phone-frame-home" class="absolute inset-0 flex flex-col justify-between p-3.5 text-white hidden">
+          <div class="bg-black/30 backdrop-blur-sm rounded-xl p-2 flex items-center gap-2 mt-2">
+            <i class="fa-brands fa-google text-xs text-brand-primary"></i>
+            <span class="text-[8px] opacity-70">Search wallpapers...</span>
+          </div>
+          <!-- App Grid simulation -->
+          <div class="grid grid-cols-4 gap-2.5 mb-2">
+            <div class="flex flex-col items-center gap-0.5">
+              <div class="w-6 h-6 rounded-lg bg-neutral-700/60 flex items-center justify-center text-[10px]"><i class="fa-solid fa-phone"></i></div>
+              <span class="text-[7px]">Phone</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+              <div class="w-6 h-6 rounded-lg bg-neutral-700/60 flex items-center justify-center text-[10px] text-blue-400"><i class="fa-solid fa-message"></i></div>
+              <span class="text-[7px]">Chat</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+              <div class="w-6 h-6 rounded-lg bg-neutral-700/60 flex items-center justify-center text-[10px] text-green-400"><i class="fa-solid fa-compass"></i></div>
+              <span class="text-[7px]">Explore</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+              <div class="w-6 h-6 rounded-lg bg-brand-primaryDark/80 flex items-center justify-center text-[10px] text-brand-primary"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <span class="text-[7px]">Droid</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Selection options -->
+      <div class="space-y-2">
+        <button onclick="applyWallpaperOption('lock')" class="w-full bg-brand-surface light:bg-brand-lightSurface hover:bg-brand-primary/20 text-brand-onSurface py-3 rounded-2xl text-xs font-poppins font-bold text-left px-4 flex items-center justify-between border border-white/5 active:scale-[0.98] transition-all">
+          <span>Set as Lock Screen Only</span>
+          <i class="fa-solid fa-lock text-brand-onSurfaceVariant/40"></i>
+        </button>
+        <button onclick="applyWallpaperOption('home')" class="w-full bg-brand-surface light:bg-brand-lightSurface hover:bg-brand-primary/20 text-brand-onSurface py-3 rounded-2xl text-xs font-poppins font-bold text-left px-4 flex items-center justify-between border border-white/5 active:scale-[0.98] transition-all">
+          <span>Set as Home Screen Only</span>
+          <i class="fa-solid fa-house text-brand-onSurfaceVariant/40"></i>
+        </button>
+        <button onclick="applyWallpaperOption('both')" class="w-full bg-brand-primary hover:bg-brand-primaryDark text-black py-3 rounded-2xl text-xs font-poppins font-bold text-left px-4 flex items-center justify-between active:scale-[0.98] transition-all">
+          <span>Apply to Both Screens</span>
+          <i class="fa-solid fa-mobile-screen-button"></i>
+        </button>
+      </div>
+
+      <button id="cancel-set-btn" class="w-full text-center text-xs text-brand-onSurfaceVariant/60 hover:text-white font-medium">Cancel Process</button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SNACKBAR CONTAINER (NATIVE TOAST NOTIFICATIONS) -->
+  <!-- ============================================ -->
+  <div id="snackbar-container" class="fixed bottom-22 left-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none">
+    <!-- Dynamic snackbars insert here -->
+  </div>
+
+  <!-- ============================================ -->
+  <!-- MAIN CONTROLLING JAVASCRIPT APP LOGIC -->
+  <!-- ============================================ -->
+  <script>
+    // ============================================
+    // HARDCODED API CREDENTIALS FOR RELIABLE LIVE ACCESS
+    // ============================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyA8qH8qpnU2YUMccTlC8Zqm2NAFsqULsgY",
+      authDomain: "wallpaper-app-464f1.firebaseapp.com",
+      databaseURL: "https://wallpaper-app-464f1-default-rtdb.firebaseio.com",
+      projectId: "wallpaper-app-464f1",
+      storageBucket: "wallpaper-app-464f1.firebasestorage.app",
+      messagingSenderId: "1029699669313",
+      appId: "1:1029699669313:web:43ce9c4863d1fdaafc25c0",
+      measurementId: "G-5MG2EH4PPS"
+    };
+
+    const CLOUDINARY_CONFIG = {
+      cloudName: "djtzg5ou7",
+      uploadPreset: "School_app"
+    };
+
+    // Initialize Firebase Compatibility Mode
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Default pre-configured system categories
+    const DEFAULT_CATEGORIES = [
+      "Nature", "AMOLED", "Cars", "Bikes", "Anime", "Gaming", 
+      "Technology", "Abstract", "Animals", "Sports", "Minimal", 
+      "Space", "Superhero", "Festival", "Quotes"
+    ];
+
+    // Local Variables & Application States
+    let wallpapers = [];
+    let categoriesList = [...DEFAULT_CATEGORIES];
+    let selectedColorFilter = "";
+    let activeWallpaperIndex = -1;
+    let featuredWallpapers = [];
+    let currentBannerIndex = 0;
+    let bannerInterval = null;
+
+    // Local Persistence Handlers
+    let userLikes = JSON.parse(localStorage.getItem('likedWallpapers')) || [];
+    let recentViews = JSON.parse(localStorage.getItem('recentlyViewedWallpapers')) || [];
+
+    // On Load Initializer
+    window.addEventListener('DOMContentLoaded', () => {
+      initAppTheme();
+      initRealtimeDatabase();
+      setupPullToRefresh();
+      setupInteractiveRipples();
+      setupSearchBehavior();
+      setupDetailViewGestures();
+      
+      // Hook settings toggles
+      document.getElementById('amoled-toggle').addEventListener('change', toggleAmoledMode);
+      document.getElementById('light-theme-toggle').addEventListener('change', toggleLightMode);
+      document.getElementById('theme-toggle-btn').addEventListener('click', toggleThemeBtn);
+      document.getElementById('admin-panel-btn').addEventListener('click', () => window.location.href = '/admin.html');
+      document.getElementById('clear-recent-btn').addEventListener('click', clearRecentHistory);
+    });
+
+    // ============================================
+    // APPLICATION THEME & DISPLAY LOGIC (Material 3)
+    // ============================================
+    function initAppTheme() {
+      const savedTheme = localStorage.getItem('appTheme') || 'dark';
+      const isAmoled = localStorage.getItem('amoledMode') === 'true';
+      
+      if (savedTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.body.className = "bg-brand-lightSurface text-brand-lightOnSurface h-screen flex flex-col overflow-hidden transition-colors duration-300 select-none";
+        document.getElementById('light-theme-toggle').checked = true;
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        document.getElementById('light-theme-toggle').checked = false;
+        
+        if (isAmoled) {
+          document.body.className = "bg-brand-amoled text-brand-onSurface h-screen flex flex-col overflow-hidden transition-colors duration-300 select-none";
+          document.getElementById('amoled-toggle').checked = true;
+        } else {
+          document.body.className = "bg-brand-surface text-brand-onSurface h-screen flex flex-col overflow-hidden transition-colors duration-300 select-none";
+          document.getElementById('amoled-toggle').checked = false;
+        }
+      }
+      updateThemeIcons();
+    }
+
+    function updateThemeIcons() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const iconEl = document.getElementById('theme-icon');
+      if (isDark) {
+        iconEl.className = "fa-solid fa-sun text-sm";
+      } else {
+        iconEl.className = "fa-solid fa-moon text-sm";
+      }
+    }
+
+    function toggleThemeBtn() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        setThemeMode('light');
+      } else {
+        setThemeMode('dark');
+      }
+    }
+
+    function setThemeMode(mode) {
+      localStorage.setItem('appTheme', mode);
+      if (mode === 'light') {
+        localStorage.setItem('amoledMode', 'false');
+      }
+      initAppTheme();
+    }
+
+    function toggleAmoledMode(e) {
+      if (e.target.checked) {
+        localStorage.setItem('amoledMode', 'true');
+        localStorage.setItem('appTheme', 'dark');
+      } else {
+        localStorage.setItem('amoledMode', 'false');
+      }
+      initAppTheme();
+    }
+
+    function toggleLightMode(e) {
+      if (e.target.checked) {
+        setThemeMode('light');
+      } else {
+        setThemeMode('dark');
+      }
+    }
+
+    // ============================================
+    // FIREBASE REALTIME SYNCHRONIZATION
+    // ============================================
+    function initRealtimeDatabase() {
+      // Listen to Wallpapers metadata
+      db.ref('wallpapers').on('value', (snapshot) => {
+        const data = snapshot.val();
+        wallpapers = [];
+        if (data) {
+          for (let key in data) {
+            wallpapers.push({ id: key, ...data[key] });
+          }
+        }
+        // Reverse array to show newest uploads first
+        wallpapers.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+        
+        featuredWallpapers = wallpapers.filter(w => w.featured && w.status !== 'inactive');
+        
+        renderHomeBanner();
+        renderTrendingCarousel();
+        renderLatestGrid();
+        renderSearchGrid();
+        renderFavoritesGrid();
+        renderRecentViewsGrid();
+      }, (error) => {
+        showSnackbar("Error fetching database records.", "error");
+      });
+
+      // Listen to dynamic Category configurations
+      db.ref('categories').on('value', (snapshot) => {
+        const data = snapshot.val();
+        categoriesList = [...DEFAULT_CATEGORIES];
+        if (data) {
+          for (let key in data) {
+            const catName = data[key].name || data[key];
+            if (catName && !categoriesList.includes(catName)) {
+              categoriesList.push(catName);
+            }
+          }
+        }
+        renderCategoryChips();
+        renderExploreCategoriesGrid();
+        populateFilterCategoryDropdown();
+      });
+    }
+
+    // ============================================
+    // HOME VIEW COMPONENT RENDERING
+    // ============================================
+    function renderHomeBanner() {
+      const bannerBg = document.getElementById('banner-bg');
+      const bannerTitle = document.getElementById('banner-title');
+      const bannerCategory = document.getElementById('banner-category');
+      const bannerDots = document.getElementById('banner-dots');
+      
+      if (featuredWallpapers.length === 0) {
+        // Fallback default banner if empty
+        bannerBg.style.backgroundImage = `url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=600')`;
+        bannerTitle.innerText = "Discover Fine Wallpapers";
+        bannerCategory.innerText = "Explore hundreds of direct CDN optimized papers";
+        bannerDots.innerHTML = "";
+        return;
+      }
+
+      const updateBanner = (index) => {
+        const item = featuredWallpapers[index];
+        bannerBg.style.backgroundImage = `url('${getOptimizedUrl(item.wallpaperUrl, 600)}')`;
+        bannerTitle.innerText = item.title;
+        bannerCategory.innerText = `${item.category} • HD Edition`;
+        
+        // Handle dots state
+        bannerDots.innerHTML = featuredWallpapers.map((_, i) => `
+          <div class="h-1.5 rounded-full transition-all duration-300 ${i === index ? 'w-4 bg-brand-primary' : 'w-1.5 bg-white/40'}"></div>
+        `).join('');
+
+        // Banner click opens details
+        document.getElementById('home-featured-banner').onclick = () => {
+          openWallpaperDetail(item.id);
+        };
+      };
+
+      currentBannerIndex = 0;
+      updateBanner(currentBannerIndex);
+
+      if (bannerInterval) clearInterval(bannerInterval);
+      if (featuredWallpapers.length > 1) {
+        bannerInterval = setInterval(() => {
+          currentBannerIndex = (currentBannerIndex + 1) % featuredWallpapers.length;
+          updateBanner(currentBannerIndex);
+        }, 5000);
+      }
+    }
+
+    function renderCategoryChips() {
+      const container = document.getElementById('home-categories-chips');
+      let html = `
+        <button onclick="filterByCategoryHome('all')" class="flex-shrink-0 px-4 py-2 rounded-full font-poppins text-xs font-semibold tracking-wide transition-all border ${activeHomeCategory === 'all' ? 'bg-brand-primary text-black border-transparent' : 'bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant border-white/5 text-brand-onSurfaceVariant'}" id="chip-all">
+          🔥 All Releases
+        </button>
+      `;
+      
+      categoriesList.slice(0, 15).forEach(cat => {
+        const isActive = activeHomeCategory === cat;
+        html += `
+          <button onclick="filterByCategoryHome('${cat}')" class="flex-shrink-0 px-4 py-2 rounded-full font-poppins text-xs font-semibold tracking-wide transition-all border ${isActive ? 'bg-brand-primary text-black border-transparent' : 'bg-brand-surfaceVariant light:bg-brand-lightSurfaceVariant border-white/5 text-brand-onSurfaceVariant'}">
+            ${cat}
+          </button>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    let activeHomeCategory = "all";
+    window.filterByCategoryHome = function(cat) {
+      activeHomeCategory = cat;
+      renderCategoryChips();
+      renderLatestGrid();
+    }
+
+    function renderTrendingCarousel() {
+      const container = document.getElementById('home-trending-carousel');
+      const trendingList = wallpapers.filter(w => w.trending && w.status !== 'inactive').slice(0, 8);
+      
+      if (trendingList.length === 0) {
+        container.innerHTML = `
+          <div class="py-4 text-center text-xs text-brand-onSurfaceVariant/50 w-full font-poppins">
+            No trending wallpapers configured yet
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = trendingList.map(item => `
+        <div onclick="openWallpaperDetail('${item.id}')" class="w-32 h-56 rounded-3xl overflow-hidden shadow-lg flex-shrink-0 relative group active:scale-95 transition-transform duration-200 cursor-pointer">
+          <div class="absolute inset-0 bg-neutral-900 shimmer"></div>
+          <img src="${getOptimizedUrl(item.wallpaperUrl, 250)}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-0" onload="this.classList.remove('opacity-0')">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+          <div class="absolute bottom-3 left-3 right-3 space-y-0.5">
+            <p class="text-[10px] font-poppins font-bold text-white line-clamp-1">${item.title}</p>
+            <div class="flex items-center justify-between text-[8px] text-brand-primary">
+              <span>${item.category}</span>
+              <span><i class="fa-solid fa-heart text-[7px]"></i> ${item.likes || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderLatestGrid() {
+      const container = document.getElementById('home-latest-grid');
+      let displayList = wallpapers.filter(w => w.status !== 'inactive');
+      
+      if (activeHomeCategory !== "all") {
+        displayList = displayList.filter(w => w.category === activeHomeCategory);
+      }
+      
+      displayList = displayList.slice(0, 12);
+
+      if (displayList.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-2 text-center py-10 space-y-2">
+            <i class="fa-solid fa-shapes text-brand-onSurfaceVariant/30 text-2xl"></i>
+            <p class="text-xs text-brand-onSurfaceVariant/50 font-poppins">No items found under ${activeHomeCategory}</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = displayList.map(item => `
+        <div onclick="openWallpaperDetail('${item.id}')" class="relative aspect-[9/16] rounded-3xl overflow-hidden shadow-md group hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer">
+          <div class="absolute inset-0 bg-neutral-900 shimmer"></div>
+          <img src="${getOptimizedUrl(item.wallpaperUrl, 300)}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-0" loading="lazy" onload="this.classList.remove('opacity-0')">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+          
+          <!-- Quick Labels -->
+          <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
+            ${item.premium ? `<span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-yellow-400 text-black shadow-md shadow-black/20"><i class="fa-solid fa-crown text-[7px]"></i> PRO</span>` : ''}
+            ${item.featured ? `<span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-blue-500 text-white shadow-md shadow-black/20">M3</span>` : ''}
+          </div>
+
+          <div class="absolute bottom-3 left-3 right-3">
+            <h4 class="text-xs font-poppins font-bold text-white line-clamp-1">${item.title}</h4>
+            <div class="flex justify-between items-center text-[9px] text-white/70 mt-0.5">
+              <span>${item.category}</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-circle-down text-[8px] text-brand-primary"></i> ${item.downloads || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ============================================
+    // EXPLORE VIEW COMPONENT RENDERING
+    // ============================================
+    function renderExploreCategoriesGrid() {
+      const container = document.getElementById('explore-categories-grid');
+      
+      container.innerHTML = categoriesList.map(cat => {
+        // Find a representative wallpaper to act as category cover background image
+        const sampleWall = wallpapers.find(w => w.category === cat && w.status !== 'inactive');
+        const bgUrl = sampleWall ? getOptimizedUrl(sampleWall.wallpaperUrl, 400) : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
+        const count = wallpapers.filter(w => w.category === cat && w.status !== 'inactive').length;
+
+        return `
+          <div onclick="selectCategoryExplore('${cat}')" class="relative h-28 rounded-3xl overflow-hidden group shadow-lg active:scale-98 transition-all duration-300 cursor-pointer">
+            <div class="absolute inset-0 bg-neutral-900 shimmer"></div>
+            <img src="${bgUrl}" alt="${cat}" class="w-full h-full object-cover brightness-50 group-hover:scale-105 transition-transform duration-500 opacity-0" loading="lazy" onload="this.classList.remove('opacity-0')">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/10"></div>
+            
+            <div class="absolute inset-y-0 left-5 flex flex-col justify-center text-white">
+              <h3 class="font-poppins font-bold text-base tracking-wide">${cat}</h3>
+              <p class="text-[10px] text-brand-primary/80 font-mono mt-0.5">${count} Wallpapers available</p>
+            </div>
+            
+            <div class="absolute right-5 top-1/2 -translate-y-1/2 text-white/50 group-hover:text-white transition-colors">
+              <i class="fa-solid fa-arrow-right-long text-lg"></i>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.selectCategoryExplore = function(cat) {
+      switchTab('search');
+      document.getElementById('filter-category').value = cat;
+      triggerFiltersSearch();
+    }
+
+    // ============================================
+    // SEARCH & MULTI-FACET FILTER SYSTEM
+    // ============================================
+    const COLOR_ACCENTS = [
+      { name: "AMOLED Black", hex: "#000000" },
+      { name: "Deep Red", hex: "#EF4444" },
+      { name: "Ocean Blue", hex: "#3B82F6" },
+      { name: "Emerald Green", hex: "#10B981" },
+      { name: "Bright Yellow", hex: "#FBBF24" },
+      { name: "Neon Orange", hex: "#F97316" },
+      { name: "Vibrant Purple", hex: "#8B5CF6" },
+      { name: "Soft Pink", hex: "#EC4899" },
+      { name: "Minimal White", hex: "#FFFFFF" }
+    ];
+
+    function setupSearchBehavior() {
+      const searchInput = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear-btn');
+      const filterToggle = document.getElementById('filters-toggle-btn');
+      const filterDrawer = document.getElementById('filters-drawer');
+      const resetBtn = document.getElementById('filters-reset-btn');
+
+      // Colors filter list
+      const colorGrid = document.getElementById('filter-colors-grid');
+      colorGrid.innerHTML = COLOR_ACCENTS.map(col => `
+        <button onclick="selectColorFilter('${col.name}')" class="color-chip-btn w-7 h-7 rounded-full border border-white/10 relative transition-all" style="background-color: ${col.hex}" title="${col.name}">
+          <span class="absolute inset-0 items-center justify-center hidden text-[9px] text-white drop-shadow-md" id="check-${col.name.replace(' ', '-')}">
+            <i class="fa-solid fa-check"></i>
+          </span>
+        </button>
+      `).join('');
+
+      // Input changes (Realtime, Debounced)
+      let debounceTimer;
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        if (val.length > 0) {
+          clearBtn.classList.remove('hidden');
+          renderSearchSuggestions(val);
+        } else {
+          clearBtn.classList.add('hidden');
+          document.getElementById('search-suggestions').classList.add('hidden');
+        }
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          triggerFiltersSearch();
+        }, 350);
+      });
+
+      clearBtn.addEventListener('click', () => {
+        searchInput.value = "";
+        clearBtn.classList.add('hidden');
+        document.getElementById('search-suggestions').classList.add('hidden');
+        triggerFiltersSearch();
+      });
+
+      // Toggle Advanced Filters
+      filterToggle.addEventListener('click', () => {
+        filterDrawer.classList.toggle('hidden');
+      });
+
+      // Setup Aspect and Sort chip event listeners
+      document.querySelectorAll('.filter-chip-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const type = btn.getAttribute('data-filter');
+          const value = btn.getAttribute('data-val');
+          
+          document.querySelectorAll(`.filter-chip-btn[data-filter="${type}"]`).forEach(b => {
+            b.classList.remove('bg-brand-primary', 'text-black', 'active-filter');
+            b.classList.add('bg-brand-surface/40', 'text-brand-onSurface');
+          });
+
+          btn.classList.add('bg-brand-primary', 'text-black', 'active-filter');
+          btn.classList.remove('bg-brand-surface/40', 'text-brand-onSurface');
+          
+          triggerFiltersSearch();
+        });
+      });
+
+      // Reset filters
+      resetBtn.addEventListener('click', () => {
+        document.getElementById('filter-category').value = "all";
+        selectedColorFilter = "";
+        document.querySelectorAll('.color-chip-btn span').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.filter-chip-btn').forEach(btn => {
+          const type = btn.getAttribute('data-filter');
+          const value = btn.getAttribute('data-val');
+          btn.classList.remove('bg-brand-primary', 'text-black', 'active-filter');
+          btn.classList.add('bg-brand-surface/40', 'text-brand-onSurface');
+          if (type === 'sort' && value === 'newest') {
+            btn.classList.add('bg-brand-primary', 'text-black', 'active-filter');
+          }
+        });
+        document.getElementById('filter-featured').checked = false;
+        document.getElementById('filter-premium').checked = false;
+        triggerFiltersSearch();
+      });
+
+      // Category filter changes
+      document.getElementById('filter-category').addEventListener('change', triggerFiltersSearch);
+      document.getElementById('filter-featured').addEventListener('change', triggerFiltersSearch);
+      document.getElementById('filter-premium').addEventListener('change', triggerFiltersSearch);
+    }
+
+    function populateFilterCategoryDropdown() {
+      const dropdown = document.getElementById('filter-category');
+      dropdown.innerHTML = '<option value="all">All Categories</option>' + categoriesList.map(cat => `
+        <option value="${cat}">${cat}</option>
+      `).join('');
+    }
+
+    window.selectColorFilter = function(colorName) {
+      document.querySelectorAll('.color-chip-btn span').forEach(s => s.classList.add('hidden'));
+      if (selectedColorFilter === colorName) {
+        selectedColorFilter = "";
+      } else {
+        selectedColorFilter = colorName;
+        document.getElementById(`check-${colorName.replace(' ', '-')}`).classList.remove('hidden');
+        document.getElementById(`check-${colorName.replace(' ', '-')}`).classList.add('flex');
+      }
+      triggerFiltersSearch();
+    }
+
+    function renderSearchSuggestions(val) {
+      const suggestionsBox = document.getElementById('search-suggestions');
+      const valLower = val.toLowerCase();
+      
+      // Match keywords in wallpapers
+      const suggestions = new Set();
+      wallpapers.forEach(w => {
+        if (w.title.toLowerCase().includes(valLower)) suggestions.add(w.title);
+        if (w.category.toLowerCase().includes(valLower)) suggestions.add(w.category);
+        if (w.tags) {
+          w.tags.split(',').forEach(tag => {
+            const trimmed = tag.trim();
+            if (trimmed.toLowerCase().includes(valLower)) suggestions.add(trimmed);
+          });
+        }
+      });
+
+      const list = Array.from(suggestions).slice(0, 5);
+      if (list.length === 0) {
+        suggestionsBox.classList.add('hidden');
+        return;
+      }
+
+      suggestionsBox.innerHTML = list.map(item => `
+        <div onclick="applySearchSuggestion('${item.replace(/'/g, "\\'")}')" class="p-3.5 hover:bg-white/5 active:bg-white/10 text-xs text-brand-onSurface flex items-center gap-3 cursor-pointer border-b border-white/5 last:border-0">
+          <i class="fa-solid fa-clock-rotate-left text-brand-onSurfaceVariant/40"></i>
+          <span>${item}</span>
+        </div>
+      `).join('');
+      suggestionsBox.classList.remove('hidden');
+    }
+
+    window.applySearchSuggestion = function(text) {
+      const searchInput = document.getElementById('search-input');
+      searchInput.value = text;
+      document.getElementById('search-clear-btn').classList.remove('hidden');
+      document.getElementById('search-suggestions').classList.add('hidden');
+      triggerFiltersSearch();
+    }
+
+    function triggerFiltersSearch() {
+      renderSearchGrid();
+    }
+
+    function renderSearchGrid() {
+      const grid = document.getElementById('search-wallpapers-grid');
+      const searchInput = document.getElementById('search-input').value.trim().toLowerCase();
+      const catVal = document.getElementById('filter-category').value;
+      const isFeatured = document.getElementById('filter-featured').checked;
+      const isPremium = document.getElementById('filter-premium').checked;
+      
+      // Fetch active aspect and sort buttons
+      const activeAspectChip = document.querySelector('.filter-chip-btn[data-filter="aspect"].active-filter');
+      const aspectVal = activeAspectChip ? activeAspectChip.getAttribute('data-val') : "";
+
+      const activeSortChip = document.querySelector('.filter-chip-btn[data-filter="sort"].active-filter');
+      const sortVal = activeSortChip ? activeSortChip.getAttribute('data-val') : "newest";
+
+      let filtered = wallpapers.filter(w => w.status !== 'inactive');
+
+      // 1. Text filter
+      if (searchInput.length > 0) {
+        filtered = filtered.filter(w => {
+          const matchTitle = w.title.toLowerCase().includes(searchInput);
+          const matchCategory = w.category.toLowerCase().includes(searchInput);
+          const matchTags = w.tags ? w.tags.toLowerCase().includes(searchInput) : false;
+          return matchTitle || matchCategory || matchTags;
+        });
+      }
+
+      // 2. Category filter
+      if (catVal !== "all") {
+        filtered = filtered.filter(w => w.category === catVal);
+      }
+
+      // 3. Aspect Ratio filter
+      if (aspectVal) {
+        filtered = filtered.filter(w => w.aspectRatio === aspectVal);
+      }
+
+      // 4. Color filter
+      if (selectedColorFilter) {
+        filtered = filtered.filter(w => w.tags && w.tags.toLowerCase().includes(selectedColorFilter.toLowerCase()));
+      }
+
+      // 5. Featured toggle filter
+      if (isFeatured) {
+        filtered = filtered.filter(w => w.featured);
+      }
+
+      // 6. Premium toggle filter
+      if (isPremium) {
+        filtered = filtered.filter(w => w.premium);
+      }
+
+      // 7. Sort implementation
+      if (sortVal === 'newest') {
+        filtered.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+      } else if (sortVal === 'popular') {
+        filtered.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+      } else if (sortVal === 'likes') {
+        filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      } else if (sortVal === 'views') {
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+      }
+
+      // Results count update
+      const counter = document.getElementById('search-results-counter');
+      counter.innerText = `${filtered.length} Wallpapers customized`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        document.getElementById('search-empty-state').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('search-empty-state').classList.add('hidden');
+
+      grid.innerHTML = filtered.map(item => `
+        <div onclick="openWallpaperDetail('${item.id}')" class="relative aspect-[9/16] rounded-3xl overflow-hidden shadow-md group hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer">
+          <div class="absolute inset-0 bg-neutral-900 shimmer"></div>
+          <img src="${getOptimizedUrl(item.wallpaperUrl, 300)}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-0" loading="lazy" onload="this.classList.remove('opacity-0')">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+          
+          <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
+            ${item.premium ? `<span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-yellow-400 text-black shadow-md shadow-black/20"><i class="fa-solid fa-crown text-[7px]"></i> PRO</span>` : ''}
+            ${item.trending ? `<span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-orange-500 text-white shadow-md shadow-black/20">HOT</span>` : ''}
+          </div>
+
+          <div class="absolute bottom-3 left-3 right-3">
+            <h4 class="text-xs font-poppins font-bold text-white line-clamp-1">${item.title}</h4>
+            <div class="flex justify-between items-center text-[9px] text-white/70 mt-0.5">
+              <span>${item.category}</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-heart text-[8px] text-red-400"></i> ${item.likes || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ============================================
+    // FAVORITES (LOCAL PERSISTENCE) VIEW
+    // ============================================
+    function renderFavoritesGrid() {
+      const container = document.getElementById('favorites-grid');
+      const emptyState = document.getElementById('favorites-empty-state');
+      
+      const likedItems = wallpapers.filter(w => userLikes.includes(w.id) && w.status !== 'inactive');
+
+      if (likedItems.length === 0) {
+        container.innerHTML = "";
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = likedItems.map(item => `
+        <div onclick="openWallpaperDetail('${item.id}')" class="relative aspect-[9/16] rounded-3xl overflow-hidden shadow-md group active:scale-95 transition-all duration-300 cursor-pointer">
+          <div class="absolute inset-0 bg-neutral-900 shimmer"></div>
+          <img src="${getOptimizedUrl(item.wallpaperUrl, 300)}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-0" loading="lazy" onload="this.classList.remove('opacity-0')">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+          
+          <button onclick="toggleLikeSwipe(event, '${item.id}')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-red-400 border border-white/5 z-10 active:scale-90 transition-all">
+            <i class="fa-solid fa-heart text-xs"></i>
+          </button>
+
+          <div class="absolute bottom-3 left-3 right-3">
+            <h4 class="text-xs font-poppins font-bold text-white line-clamp-1">${item.title}</h4>
+            <div class="flex justify-between items-center text-[9px] text-white/70 mt-0.5">
+              <span>${item.category}</span>
+              <span><i class="fa-solid fa-heart text-[8px] text-red-400"></i> ${item.likes || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.toggleLikeSwipe = function(event, id) {
+      event.stopPropagation();
+      toggleLike(id);
+    }
+
+    // ============================================
+    // RECENTLY VIEWED CAROUSEL
+    // ============================================
+    function renderRecentViewsGrid() {
+      const container = document.getElementById('recent-history-carousel');
+      const recentItems = wallpapers.filter(w => recentViews.includes(w.id) && w.status !== 'inactive');
+      
+      if (recentItems.length === 0) {
+        container.innerHTML = `
+          <div class="py-6 text-center text-xs text-brand-onSurfaceVariant/50 w-full font-poppins">
+            No history yet. Start previewing wallpapers!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = recentItems.map(item => `
+        <div onclick="openWallpaperDetail('${item.id}')" class="w-24 h-40 rounded-2xl overflow-hidden shadow-md flex-shrink-0 relative group active:scale-95 transition-all duration-300 cursor-pointer">
+          <div class="absolute inset-0 bg-neutral-900 shimmer"></div>
+          <img src="${getOptimizedUrl(item.wallpaperUrl, 200)}" alt="${item.title}" class="w-full h-full object-cover opacity-0" loading="lazy" onload="this.classList.remove('opacity-0')">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+          <div class="absolute bottom-2 left-2 right-2">
+            <p class="text-[9px] font-poppins font-bold text-white line-clamp-1">${item.title}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearRecentHistory() {
+      recentViews = [];
+      localStorage.setItem('recentlyViewedWallpapers', JSON.stringify(recentViews));
+      renderRecentViewsGrid();
+      showSnackbar("Browsing history cleared.", "info");
+    }
+
+    // ============================================
+    // SWIPE, PINCH ZOOM & GESTURE MANAGEMENT
+    // ============================================
+    function setupDetailViewGestures() {
+      const viewport = document.getElementById('detail-image-viewport');
+      const image = document.getElementById('detail-image');
+      
+      let startX = 0;
+      let startY = 0;
+      let isSwiping = false;
+
+      // Pinch zoom states
+      let startDistance = 0;
+      let currentScale = 1;
+      let isPinching = false;
+
+      // Swipe Gestures
+      viewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          isSwiping = true;
+        } else if (e.touches.length === 2) {
+          isSwiping = false;
+          isPinching = true;
+          startDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      });
+
+      viewport.addEventListener('touchmove', (e) => {
+        if (isPinching && e.touches.length === 2) {
+          e.preventDefault();
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          currentScale = Math.min(Math.max(dist / startDistance, 1), 3);
+          image.style.transform = `scale(${currentScale})`;
+        }
+      });
+
+      viewport.addEventListener('touchend', (e) => {
+        if (isSwiping) {
+          const endX = e.changedTouches[0].clientX;
+          const endY = e.changedTouches[0].clientY;
+          const diffX = endX - startX;
+          const diffY = endY - startY;
+
+          if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
+            // Horizontal Swipe
+            if (diffX > 0) {
+              navigateDetailWallpaper(-1); // Swipe Right -> Prev
+            } else {
+              navigateDetailWallpaper(1); // Swipe Left -> Next
+            }
+          }
+          isSwiping = false;
+        }
+        
+        if (isPinching) {
+          isPinching = false;
+          // Smooth bounce zoom back
+          if (currentScale < 1.05) {
+            currentScale = 1;
+            image.style.transform = 'scale(1)';
+          }
+        }
+      });
+
+      // Desktop Double Click to Zoom toggle
+      viewport.addEventListener('dblclick', () => {
+        if (currentScale === 1) {
+          currentScale = 2;
+          image.style.transform = 'scale(2)';
+        } else {
+          currentScale = 1;
+          image.style.transform = 'scale(1)';
+        }
+      });
+    }
+
+    // ============================================
+    // DETAIL SHEET PANEL OVERLAYS
+    // ============================================
+    window.openWallpaperDetail = function(id) {
+      const overlay = document.getElementById('detail-overlay');
+      const itemIndex = wallpapers.findIndex(w => w.id === id);
+      if (itemIndex === -1) return;
+
+      activeWallpaperIndex = itemIndex;
+      const item = wallpapers[itemIndex];
+
+      // Record History Views
+      if (!recentViews.includes(item.id)) {
+        recentViews.unshift(item.id);
+        recentViews = recentViews.slice(0, 10); // Keep max 10
+        localStorage.setItem('recentlyViewedWallpapers', JSON.stringify(recentViews));
+        renderRecentViewsGrid();
+      }
+
+      // Increment Database Views
+      db.ref(`wallpapers/${item.id}/views`).transaction(current => (current || 0) + 1);
+
+      // Render Overlay Details
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        overlay.classList.remove('translate-y-full');
+      }, 50);
+
+      updateDetailUI(item);
+    };
+
+    function updateDetailUI(item) {
+      document.getElementById('detail-shimmer').classList.remove('hidden');
+      
+      const img = document.getElementById('detail-image');
+      img.style.transform = "scale(1)";
+      
+      // Load optimized large screen image transformed dynamically
+      img.src = getOptimizedUrl(item.wallpaperUrl, 1200);
+      img.onload = () => {
+        document.getElementById('detail-shimmer').classList.add('hidden');
+      };
+
+      document.getElementById('detail-title').innerText = item.title;
+      document.getElementById('detail-desc').innerText = item.description || "Premium handcrafted wallpaper.";
+      
+      // Category and flags
+      const badge = document.getElementById('detail-category-badge');
+      badge.innerText = item.category;
+      
+      const premBadge = document.getElementById('detail-premium-badge');
+      if (item.premium) premBadge.classList.remove('hidden');
+      else premBadge.classList.add('hidden');
+
+      const trendBadge = document.getElementById('detail-trending-badge');
+      if (item.trending) trendBadge.classList.remove('hidden');
+      else trendBadge.classList.add('hidden');
+
+      // Sync counters
+      document.getElementById('counter-views').innerText = item.views || 0;
+      document.getElementById('counter-likes').innerText = item.likes || 0;
+      document.getElementById('counter-downloads').innerText = item.downloads || 0;
+
+      // Telemetry
+      document.getElementById('tel-resolution').innerText = item.resolution || "Auto HD";
+      document.getElementById('tel-ratio').innerText = item.aspectRatio || "9:16";
+
+      // Setup Likes state
+      updateLikeBtnState(item.id);
+
+      // Render Related list
+      renderRelatedCarousel(item.category, item.id);
+
+      // Wire listeners inside details
+      document.getElementById('detail-like-btn').onclick = () => toggleLike(item.id);
+      document.getElementById('detail-share-btn').onclick = () => shareWallpaper(item);
+      document.getElementById('set-wallpaper-btn').onclick = () => openSetWallpaperDialog(item);
+      document.getElementById('download-btn').onclick = () => downloadWallpaper(item);
+    }
+
+    function navigateDetailWallpaper(dir) {
+      if (activeWallpaperIndex === -1) return;
+      let nextIndex = activeWallpaperIndex + dir;
+      
+      // Boundary wraps
+      if (nextIndex < 0) nextIndex = wallpapers.length - 1;
+      if (nextIndex >= wallpapers.length) nextIndex = 0;
+
+      activeWallpaperIndex = nextIndex;
+      const item = wallpapers[nextIndex];
+      updateDetailUI(item);
+      
+      // Increment Views
+      db.ref(`wallpapers/${item.id}/views`).transaction(current => (current || 0) + 1);
+    }
+
+    // Related Carousel under detail sheet
+    function renderRelatedCarousel(category, activeId) {
+      const container = document.getElementById('detail-related-carousel');
+      const related = wallpapers.filter(w => w.category === category && w.id !== activeId && w.status !== 'inactive').slice(0, 5);
+
+      if (related.length === 0) {
+        container.innerHTML = `<span class="text-xs text-brand-onSurfaceVariant/40">No related wallpapers in this category.</span>`;
+        return;
+      }
+
+      container.innerHTML = related.map(item => `
+        <div onclick="openWallpaperDetail('${item.id}')" class="w-16 h-28 rounded-xl overflow-hidden shadow-md flex-shrink-0 relative group active:scale-95 transition-all cursor-pointer">
+          <img src="${getOptimizedUrl(item.wallpaperUrl, 150)}" alt="${item.title}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-black/20"></div>
+        </div>
+      `).join('');
+    }
+
+    // Close Details Sheet
+    document.getElementById('detail-close-btn').addEventListener('click', () => {
+      const overlay = document.getElementById('detail-overlay');
+      overlay.classList.add('translate-y-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 500);
+    });
+
+    // ============================================
+    // ACTION CONTROLLER IMPLEMENTATIONS
+    // ============================================
+    
+    // Likes Sync & Storage Handler
+    function toggleLike(id) {
+      const heartIcon = document.getElementById('detail-like-icon');
+      const ref = db.ref(`wallpapers/${id}/likes`);
+
+      if (userLikes.includes(id)) {
+        // Unlike
+        userLikes = userLikes.filter(item => item !== id);
+        ref.transaction(likes => Math.max(0, (likes || 0) - 1));
+        showSnackbar("Removed from library favorites.", "info");
+      } else {
+        // Like
+        userLikes.push(id);
+        ref.transaction(likes => (likes || 0) + 1);
+        showSnackbar("Wallpaper added to favorites!", "heart");
+      }
+      
+      localStorage.setItem('likedWallpapers', JSON.stringify(userLikes));
+      updateLikeBtnState(id);
+      renderFavoritesGrid();
+      
+      // Refresh current displayed detail count if open
+      if (activeWallpaperIndex !== -1 && wallpapers[activeWallpaperIndex].id === id) {
+        const item = wallpapers[activeWallpaperIndex];
+        const localLikeCount = userLikes.includes(id) ? (item.likes || 0) + 1 : Math.max(0, (item.likes || 0) - 1);
+        document.getElementById('counter-likes').innerText = localLikeCount;
+      }
+    }
+
+    function updateLikeBtnState(id) {
+      const icon = document.getElementById('detail-like-icon');
+      if (!icon) return;
+      if (userLikes.includes(id)) {
+        icon.className = "fa-solid fa-heart text-red-500 animate-pulse";
+      } else {
+        icon.className = "fa-regular fa-heart";
+      }
+    }
+
+    // Share Handler (Using Web Share API with safe clipboard fallback)
+    function shareWallpaper(item) {
+      const shareData = {
+        title: item.title,
+        text: `Check out this gorgeous ${item.category} wallpaper on DroidWalls!`,
+        url: window.location.origin + `/user.html?id=${item.id}`
+      };
+
+      if (navigator.share) {
+        navigator.share(shareData)
+          .then(() => showSnackbar("Shared successfully!", "success"))
+          .catch(() => {});
+      } else {
+        navigator.clipboard.writeText(shareData.url)
+          .then(() => showSnackbar("Direct URL copied to clipboard!", "info"))
+          .catch(() => showSnackbar("Unable to copy URL.", "error"));
+      }
+    }
+
+    // Direct File Downloader
+    function downloadWallpaper(item) {
+      db.ref(`wallpapers/${item.id}/downloads`).transaction(downloads => (downloads || 0) + 1);
+      
+      // Inform User download is starting
+      showSnackbar("Preparing CDN secure download...", "download");
+
+      // Set download headers manually via Fetch or trigger browser download window
+      const url = item.wallpaperUrl;
+      const title = item.title.replace(/\s+/g, '_') + '.jpg';
+
+      fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = title;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(blobUrl);
+          showSnackbar("Wallpaper Downloaded!", "success");
+        })
+        .catch(() => {
+          // Fallback direct open in new window if CORs blocks direct fetch
+          window.open(url, '_blank');
+        });
+    }
+
+    // Simulate Native Wallpaper Setup Options
+    let simulatedItem = null;
+    function openSetWallpaperDialog(item) {
+      simulatedItem = item;
+      const dialog = document.getElementById('set-dialog');
+      const bg = document.getElementById('phone-preview-bg');
+      
+      bg.style.backgroundImage = `url('${getOptimizedUrl(item.wallpaperUrl, 400)}')`;
+      dialog.classList.remove('hidden');
+      setTimeout(() => {
+        dialog.classList.remove('opacity-0');
+        dialog.querySelector('.transform').classList.remove('scale-90');
+      }, 50);
+
+      // Handle Lock vs Home frame toggle demo loop
+      let showLock = true;
+      const frameDemoInterval = setInterval(() => {
+        if (!dialog.classList.contains('hidden')) {
+          showLock = !showLock;
+          if (showLock) {
+            document.getElementById('phone-frame-lock').classList.remove('hidden');
+            document.getElementById('phone-frame-home').classList.add('hidden');
+          } else {
+            document.getElementById('phone-frame-lock').classList.add('hidden');
+            document.getElementById('phone-frame-home').classList.remove('hidden');
+          }
+        } else {
+          clearInterval(frameDemoInterval);
+        }
+      }, 3000);
+    }
+
+    window.applyWallpaperOption = function(option) {
+      const dialog = document.getElementById('set-dialog');
+      dialog.classList.add('opacity-0');
+      dialog.querySelector('.transform').classList.add('scale-90');
+      
+      setTimeout(() => {
+        dialog.classList.add('hidden');
+        showSnackbar(`Wallpaper applied to screen ${option.toUpperCase()}!`, "success");
+      }, 300);
+    }
+
+    document.getElementById('cancel-set-btn').addEventListener('click', () => {
+      const dialog = document.getElementById('set-dialog');
+      dialog.classList.add('opacity-0');
+      dialog.querySelector('.transform').classList.add('scale-90');
+      setTimeout(() => dialog.classList.add('hidden'), 300);
+    });
+
+    // ============================================
+    // CLOUDINARY LIVE TRANSFORMATION URL UTILITIES
+    // ============================================
+    function getOptimizedUrl(originalUrl, width) {
+      if (!originalUrl) return "";
+      // Check if URL belongs to Cloudinary and insert transformations
+      if (originalUrl.includes("cloudinary.com")) {
+        return originalUrl.replace("/upload/", `/upload/c_scale,w_${width},q_auto,f_auto/`);
+      }
+      return originalUrl;
+    }
+
+    // ============================================
+    // MATERIAL COMPONENT M3 INTERACTIVE EFFECTS
+    // ============================================
+    function setupInteractiveRipples() {
+      document.body.addEventListener('click', (e) => {
+        const target = e.target.closest('button, .nav-btn, .color-chip-btn');
+        if (!target) return;
+        
+        target.classList.add('ripple-container');
+        const ripple = document.createElement('span');
+        ripple.classList.add('ripple-effect');
+        
+        const rect = target.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = `${size}px`;
+        
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        ripple.style.left = `${x}px`;
+        ripple.style.top = `${y}px`;
+        
+        target.appendChild(ripple);
+        
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      });
+    }
+
+    // Navigation View switching controller
+    window.switchTab = function(tabName) {
+      document.querySelectorAll('.tab-view').forEach(tab => tab.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-brand-primary');
+        btn.classList.add('text-brand-onSurfaceVariant/70');
+      });
+
+      const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('text-brand-primary');
+        activeBtn.classList.remove('text-brand-onSurfaceVariant/70');
+        
+        // Move bottom navigation capsule highlight bar
+        const rect = activeBtn.getBoundingClientRect();
+        const parentRect = activeBtn.parentElement.getBoundingClientRect();
+        const highlight = document.getElementById('nav-highlight');
+        
+        const offsetLeft = activeBtn.offsetLeft + (rect.width - 68) / 2;
+        highlight.style.transform = `translateX(${offsetLeft}px)`;
+      }
+    };
+
+    // Pull to Refresh Manual gesture logic
+    function setupPullToRefresh() {
+      const scrollContainer = document.getElementById('app-scroll-container');
+      const ptr = document.getElementById('pull-to-refresh-indicator');
+      
+      let startY = 0;
+      let pulling = false;
+
+      scrollContainer.addEventListener('touchstart', (e) => {
+        if (scrollContainer.scrollTop === 0) {
+          startY = e.touches[0].clientY;
+          pulling = true;
+        }
+      });
+
+      scrollContainer.addEventListener('touchmove', (e) => {
+        if (!pulling) return;
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0 && diff < 120) {
+          ptr.style.transform = `translateY(${diff - 64}px)`;
+        }
+      });
+
+      scrollContainer.addEventListener('touchend', () => {
+        if (!pulling) return;
+        pulling = false;
+        
+        ptr.style.transform = `translateY(16px)`;
+        
+        // Perform Refresh Task
+        setTimeout(() => {
+          ptr.style.transform = 'translateY(-100%)';
+          showSnackbar("Releases updated successfully!", "success");
+        }, 1500);
+      });
+    }
+
+    // ============================================
+    // SNACKBAR TOAST COMPONENT NOTIFIER
+    // ============================================
+    window.showSnackbar = function(message, type = "info") {
+      const container = document.getElementById('snackbar-container');
+      const snack = document.createElement('div');
+      
+      // Customize Icons based on type
+      let icon = "fa-solid fa-circle-info text-blue-400";
+      if (type === "success") icon = "fa-solid fa-circle-check text-green-400";
+      if (type === "error") icon = "fa-solid fa-triangle-exclamation text-red-400";
+      if (type === "heart") icon = "fa-solid fa-heart text-red-500 animate-bounce";
+      if (type === "download") icon = "fa-solid fa-circle-down text-brand-primary animate-pulse";
+
+      snack.className = "bg-brand-surfaceVariant/95 light:bg-brand-lightSurfaceVariant/95 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xl transform translate-y-10 opacity-0 transition-all duration-350 pointer-events-auto";
+      snack.innerHTML = `
+        <i class="${icon}"></i>
+        <span class="text-xs font-medium font-poppins text-brand-onSurface">${message}</span>
+      `;
+      
+      container.appendChild(snack);
+      
+      // Smooth animated pop entry
+      setTimeout(() => {
+        snack.classList.remove('translate-y-10', 'opacity-0');
+      }, 50);
+
+      // Auto dismiss
+      setTimeout(() => {
+        snack.classList.add('translate-y-10', 'opacity-0');
+        setTimeout(() => snack.remove(), 400);
+      }, 3500);
+    };
+
+    // Deep linking helper
+    setTimeout(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const deepId = urlParams.get('id');
+      if (deepId) openWallpaperDetail(deepId);
+    }, 800);
+
+  </script>
+</body>
+</html>
